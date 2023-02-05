@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 This is a prototype for a real-time face recognition implemented by Trung Tran(tranthanhtrung1990@gmail.com) in Python. This is the code only for the project ClientScan authorized by Robin Paine.
 
 
@@ -38,6 +37,3 @@ support file_types = 'jpg', 'png', 'jpeg'. Please add more if you want by search
 
 # Reviewing
 Add recording cropped face in temp folder for reviewing
-=======
-# faceregistraionUI
->>>>>>> 52ec8e64a0e92c13c89189e1ad9de7623933b14c
