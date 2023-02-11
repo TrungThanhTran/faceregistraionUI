@@ -39,10 +39,8 @@ face_detector = cv2.FaceDetectorYN_create(weights, "", (0, 0))
 weights = os.path.join(DATA_DIRECTORY, "models", "face_recognizer_fast.onnx")
 face_recognizer = cv2.FaceRecognizerSF_create(weights, "")
 
-
 def set_image(image):
     return gr.Image.update(value=image[0][0])
-
 
 def fig2img(fig):
     buf = io.BytesIO()
@@ -55,12 +53,10 @@ def fig2img(fig):
     img = pil_img.resize((basewidth, hsize), Image.Resampling.LANCZOS)
     return img
 
-
 def crop_face_aligned_face(aligned_face, name_file):
     # print(file_name)
     cv2.imwrite(os.path.join(DATA_DIRECTORY, 'registration',
                 name_file + '.png'), aligned_face)
-
 
 def visualize_prediction(img, faces):
     plt.figure(figsize=(50, 50))
@@ -76,7 +72,6 @@ def visualize_prediction(img, faces):
             facecolor="yellow", alpha=0.5))
     plt.axis("off")
     return fig2img(plt.gcf())
-
 
 def visualize_cv2(image, faces):
     for idx, face in enumerate(faces):
@@ -102,7 +97,6 @@ def get_biggest_face(faces):
             max_index = idx
     return max_index
 
-
 def detect(image,
            face_score_threshold,
            name_box,
@@ -120,18 +114,51 @@ def detect(image,
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     if channels == 4:
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
-
+        
     image = cv2.resize(image, (0, 0),
-                       fx=(500 / image.shape[0]), fy=(500 / image.shape[0]))
+                fx=(500 / image.shape[0]), fy=(500 / image.shape[0]))
 
+    # detected_faces  = {}
+    # # THE FIRSt round for full image 
+    # ratios = [image.shape[0], 500, 1000]
+    # for idx, rate in enumerate(ratios):
+    #     image = cv2.resize(image, (0, 0),
+    #             fx=(rate / image.shape[0]), fy=(rate / image.shape[0]))
+
+    #     height, width, _ = image.shape
+    #     face_detector.setInputSize((width, height))
+
+    #     # FACE DETECTION
+    #     _, faces = face_detector.detect(image)
+    #     if faces is None:
+    #         continue
+        
+    #     # Get biggest one
+    #     max_idx = get_biggest_face(faces)
+    #     detected_faces[idx] = faces[max_idx]
+    # max_conf = 0.0
+    # used_face = None
+    # rate_used = 0
+    # for rate_idx, face in zip(detected_faces.keys(), detected_faces.values()):
+    #     if face[-1] > max_conf:
+    #         max_conf = face[-1]
+    #         used_face = face
+    #         rate_used = rate_idx
+    
+    # print('size of image = ', used_face[2] * used_face[3])
+
+    # used_image = cv2.resize(image, (0, 0),
+    #             fx=(ratios[rate_used] / image.shape[0]), fy=(ratios[rate_used] / image.shape[0]))
+    
     height, width, _ = image.shape
     face_detector.setInputSize((width, height))
 
     # FACE DETECTION
     _, faces = face_detector.detect(image)
-
-    # Get feature
     max_idx = get_biggest_face(faces)
+
+    print('size of image = ', faces[max_idx][2] * faces[max_idx][3])
+
     aligned_face = face_recognizer.alignCrop(image, faces[max_idx])
 
     # Write cropped image
@@ -160,8 +187,10 @@ def detect(image,
         outfile.write(json_object)
 
     # assert len(faces) == 1, "THE PHOTO SHOULD CONTAIN ONLY 1 FACE"
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    showed_image = visualize_prediction(image, faces)
+    
+    visual_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    
+    showed_image = visualize_prediction(visual_image, faces)
     # showed_image = visualize_cv2(image, faces)
     return showed_image
 
@@ -216,24 +245,20 @@ def interface() -> None:
                                 detect_button = gr.Button(
                                     value="Detect face 👤")
                             with gr.Row():
-                                paths = [["data/examples/" + example]
-                                         for example in os.listdir("data/examples")
+                                paths = [["examples/" + example]
+                                         for example in os.listdir("examples")
                                          if '.jpg' in example]
-                                # example_images = gr.Dataset(
-                                #     components=([image_in]),
-                                #     label="Example images",
-                                #     samples=[[path] for path in paths])
+                                example_images = gr.Dataset(
+                                    components=([image_in]),
+                                    label="Example images",
+                                    samples=[path for path in paths])
                         with gr.Column():
                             with gr.Row():
                                 face_detected_image_out = gr.Image(
-                                    label="Face detected",
-                                    title=TITLE,
-                                    description=DESCRIPTION,
-                                    article=ARTICLE,
-                                    allow_flagging="never")
+                                    label="Face detected")
 
-                            # example_images.click(fn=set_image, inputs=[
-                            #                      example_images], outputs=[image_in])
+                            example_images.click(fn=set_image, inputs=[
+                                                 example_images], outputs=[image_in])
 
                             detect_button.click(fn=detect,
                                                 inputs=[
@@ -256,11 +281,7 @@ def interface() -> None:
                         with gr.Column():
                             with gr.Row():
                                 face_detected_webcam_out = gr.Image(
-                                    label="Face detected",
-                                    title=TITLE,
-                                    description=DESCRIPTION,
-                                    article=ARTICLE,
-                                    allow_flagging="never")
+                                    label="Face detected")
                             detect_button.click(fn=detect,
                                                 inputs=[
                                                     webcam_image_in, score_slider, name_box, id_box],
